@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app">
+        <h2>{{person.name}} -- {{person.age}}</h2>
+        <h2>{{person.fav}}</h2>
+        <ul>
+            <li>1</li>
+            <li>2</li>
+            <li>3</li>
+        </ul>
+        <div v-text="msg"></div>
+        <div v-text="person.name"></div>
+        <div>{{msg}}</div>
+        <input type="text" v-model='msg'>
+        <div v-html="htmlStr"></div>
+    </div>
+    <script src="./Vue.js"></script>
+
+    <script>
+        let vue = new Vue({
+            el: '#app',
+            data: {
+                person: {
+                    name: 'zly',
+                    age: 20,
+                    fav: 'movie'
+                },
+                msg: 'hello world',
+                htmlStr:'<h2>im your father</h2>'
+            }
+        })
+    </script>
+
+
+</body>
+
+</html>
