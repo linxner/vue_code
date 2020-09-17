@@ -10,7 +10,7 @@ const compileUtil = {
         if (expr.indexOf('{{') !== -1) {
             value = expr.replace(/\{\{(.+?)\}\}/g, (...arg) => {
                 console.log(arg);
-                return this.getVal(arg[1],vm)
+                return this.getVal(arg[1], vm)
             })
         } else {
             value = this.getVal(expr, vm)
@@ -26,7 +26,8 @@ const compileUtil = {
         this.update.modelUpdate(node, value)
     },
     on(node, expr, vm, eventName) {
-
+        let fn = vm.$options.methods && vm.$options.methods[expr];
+        node.addEventListener(eventName, fn.bind(vm),false)
     },
     update: {
         textUpdate(node, value) {
@@ -85,8 +86,9 @@ class Compile {
     compileElement(node) {
         const attr = node.attributes;
         [...attr].forEach(attr => {
-            // console.log(attr);
             const { name, value } = attr
+            // console.log(name,value);
+
             if (this.isDirective(name)) {
                 const [, directive] = name.split('-')
                 console.log(directive);
