@@ -5,11 +5,25 @@ const compileUtil = {
       return data[currentVal];
     }, vm.$data);
   },
+  setVal(expr, vm, inputVal) {
+    return expr.split(".").reduce((data, currentVal) => {
+      // console.log( currentVal);
+      data[currentVal] = inputVal;
+    }, vm.$data);
+  },
+  getContent(expr, vm) {
+    return expr.replace(/\{\{(.+?)\}\}/g, (...arg) => {
+      return this.getVal(arg[1], vm);
+    });
+  },
   text(node, expr, vm) {
     let value;
     if (expr.indexOf("{{") !== -1) {
       value = expr.replace(/\{\{(.+?)\}\}/g, (...arg) => {
-        console.log(arg);
+        // console.log(arg);
+        new Watcher(vm, arg[1], (newVal) => {
+          this.update.textUpdate(node, this.getContent(expr, vm));
+        });
         return this.getVal(arg[1], vm);
       });
     } else {
@@ -19,10 +33,19 @@ const compileUtil = {
   },
   html(node, expr, vm) {
     const value = this.getVal(expr, vm);
+    new Watcher(vm, expr, (newVal) => {
+      this.update.htmlUpdate(node, newVal);
+    });
     this.update.htmlUpdate(node, value);
   },
   model(node, expr, vm) {
     const value = this.getVal(expr, vm);
+    new Watcher(vm, expr, (newVal) => {
+      this.update.modelUpdate(node, newVal);
+    });
+    node.addEventListener("input", (e) => {
+      this.setVal(expr, vm, e.target.value);
+    });
     this.update.modelUpdate(node, value);
   },
   on(node, expr, vm, eventName) {
@@ -134,29 +157,57 @@ class Observer {
   }
   defineReactive(obj, key, value) {
     this.observer(value);
-    Object.defineProperties(obj, key, {
+    const dep = new Dep();
+    Object.defineProperty(obj, key, {
       enumerable: true,
       configurable: false,
       get() {
+        Dep.target && dep.addSub(Dep.target);
         return value;
       },
       set: (newVal) => {
         this.observer(newVal);
         if (newVal !== value) {
           value = newVal;
+          dep.notify();
         }
       },
     });
   }
 }
 
-class Dep{
-    constructor(){
-        this.subs=[]
+class Dep {
+  constructor() {
+    this.subs = [];
+  }
+  addSub(watcher) {
+    this.subs.push(watcher);
+  }
+  notify() {
+    console.log("观察者", this.subs);
+    this.subs.forEach((w) => w.update());
+  }
+}
+
+class Watcher {
+  constructor(vm, expr, cb) {
+    this.vm = vm;
+    this.expr = expr;
+    this.cb = cb;
+    this.oldVal = this.getOldVal();
+  }
+  getOldVal() {
+    Dep.target = this;
+    const oldVal = compileUtil.getVal(this.expr, this.vm);
+    Dep.target = null;
+    return oldVal;
+  }
+  update() {
+    const newVal = compileUtil.getVal(this.expr, this.vm);
+    if (newVal !== this.oldVal) {
+      this.cb(newVal);
     }
-    addSub(watcher){
-        this.subs.push(watcher)
-    }
+  }
 }
 class Vue {
   constructor(options) {
@@ -166,6 +217,19 @@ class Vue {
     if (this.$el) {
       new Observer(this.$data);
       new Compile(this.$el, this);
+      this.proxyData(this.$data);
+    }
+  }
+  proxyData(data) {
+    for (const key in data) {
+      Object.defineProperty(this, key, {
+        get() {
+          return data[key];
+        },
+        set() {
+          data[key] = newVal;
+        },
+      });
     }
   }
 }
