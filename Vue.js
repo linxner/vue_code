@@ -157,6 +157,19 @@ class Dep{
     addSub(watcher){
         this.subs.push(watcher)
     }
+    notify(){
+      console.log('通知了观察者');
+      this.subs.forEach(w=>w.update())
+    }
+}
+
+class Watch{
+  constructor(){
+
+  }
+  update(){
+    
+  }
 }
 class Vue {
   constructor(options) {
